@@ -1,57 +1,105 @@
 package data
 
-import "restfulapi/models"
+import (
+	"context"
+	"restfulapi/models"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // adds a task
-func Add(task *models.Task) bool {
-	for _,existingTask := range models.Tasks {
-		if task.ID == existingTask.ID {
-			return false
-		}
-	}
-	models.Tasks = append(models.Tasks, task)
-	return true
+func Add(task *models.Task) (primitive.ObjectID, error) {
+	task.ID = primitive.NewObjectID()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := TaskCollection.InsertOne(ctx, task)
+	return task.ID, err
+
 }
 
 // gets all avaliable tasks
-func GetAll() []*models.Task{
-	return models.Tasks
+func GetAll() ([]*models.Task, error){
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cursor, err := TaskCollection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var tasks []*models.Task
+	for cursor.Next(ctx) {
+		var task models.Task
+		if err:= cursor.Decode(&task); err != nil {
+			return nil, err
+		}
+
+		tasks = append(tasks, &task)
+	}
+	return tasks, nil
+
 }
 
 // gets a specific task using its id
-func Get(id string) (*models.Task, bool) {
-	for _, task := range models.Tasks {
-		if task.ID == id {
-			return task, true
-		}
+func Get(id string) (*models.Task, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
 	}
-	return nil, false
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var task models.Task
+	err = TaskCollection.FindOne(ctx, bson.M{"_id": objID}).Decode(&task)
+	if err != nil {
+		return nil, err
+	}
+	return &task, nil
+
 }
 
 
 // delete a task using its id
-func Delete(id string) bool{
-	for i, task := range models.Tasks {
-		if task.ID == id {
-			models.Tasks = append(models.Tasks[:i], models.Tasks[i+1:]...)
-			return true
-		}
+func Delete(id string) error {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
 	}
-	return false
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err = TaskCollection.DeleteOne(ctx, bson.M{"_id": objID})
+	return err
+
 
 }
 
 // update a task using its id
-func Update(id string, updatedTask *models.Task) bool {
-	for i, task := range models.Tasks {
-		if task.ID == id {
-			// Preserve the ID from the URL and update other fields
-			models.Tasks[i].Title = updatedTask.Title
-			models.Tasks[i].Description = updatedTask.Description
-			models.Tasks[i].DueDate = updatedTask.DueDate
-			models.Tasks[i].Status = updatedTask.Status
-			return true
-		}
+func Update(id string, updatedTask *models.Task) error {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
 	}
-	return false
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	update := bson.M{
+		"$set": bson.M {
+			"title":       updatedTask.Title,
+			"description": updatedTask.Description,
+			"due_date":    updatedTask.DueDate,
+			"status":      updatedTask.Status,
+		},
+	}
+
+	_, err = TaskCollection.UpdateByID(ctx, objID, update)
+	return err
 }
