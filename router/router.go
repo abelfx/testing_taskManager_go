@@ -13,8 +13,8 @@ func SetupRouter() *gin.Engine {
 	router.POST("/register", controllers.Signup)
     router.POST("/login", controllers.Login)
 	router.POST("/promote", middleware.AuthMiddleware(), middleware.AdminOnly(), controllers.PromoteUser) // Only admin
-	router.DELETE("/users/:id",middleware.AdminOnly(), controllers.DeleteUser)
-	router.GET("/users", middleware.AdminOnly(), controllers.GetUsers)
+	router.DELETE("/users/:id", middleware.AdminOnly(), controllers.DeleteUser)
+	router.GET("/users",   controllers.GetUsers)
 
 	// Protected routes
 	protected := router.Group("/tasks")

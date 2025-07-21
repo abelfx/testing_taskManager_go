@@ -38,7 +38,14 @@ func CreateUser(user *models.User) (primitive.ObjectID, error) {
 	// Set default values
 	user.ID = primitive.NewObjectID()
 	user.Password = string(hashedPassword)
-	if user.Role == "" {
+
+	count, err := UserCollection.CountDocuments(ctx, bson.M{})
+	if err != nil {
+		return primitive.NilObjectID, err
+	}
+	if count == 0 {
+		user.Role = "admin"
+	} else if user.Role == "" {
 		user.Role = "user"
 	}
 
