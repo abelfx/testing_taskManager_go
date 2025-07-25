@@ -3,8 +3,8 @@ package controllers
 import (
 	"net/http"
 
-	infrastructure "restfulapi/Infrastructure"
 	"restfulapi/domain"
+	infrastructure "restfulapi/infrastructure"
 	"restfulapi/usecases"
 
 	"github.com/gin-gonic/gin"

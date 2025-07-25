@@ -56,37 +56,32 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func AdminOnly() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		userID, exists := ctx.Get("userID")
-		if !exists {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
-			ctx.Abort()
-			return
-		}
-		userIDStr, ok := userID.(string)
-		if !ok {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID format"})
-			ctx.Abort()
-			return
-		}
-		objectID, err := primitive.ObjectIDFromHex(userIDStr)
-		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
-			ctx.Abort()
-			return
-		}
-		user, err := usecases.GetUserByID(objectID)
-		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-			ctx.Abort()
-			return
-		}
-		if user.Role != "admin" {
-			ctx.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
-			ctx.Abort()
-			return
-		}
-		ctx.Next()
-	}
+func AdminOnly(userUsecase *usecases.UserUsecase) gin.HandlerFunc {
+    return func(ctx *gin.Context) {
+        userIDstr, exists := ctx.Get("userID")
+        if !exists {
+            ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found"})
+            ctx.Abort()
+            return
+        }
+        objectID, err := primitive.ObjectIDFromHex(userIDstr.(string))
+        if err != nil {
+            ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+            ctx.Abort()
+            return
+        }
+
+        user, err := userUsecase.GetUserByID(objectID)
+        if err != nil {
+            ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+            ctx.Abort()
+            return
+        }
+        if user.Role != "admin" {
+            ctx.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+            ctx.Abort()
+            return
+        }
+        ctx.Next()
+    }
 }

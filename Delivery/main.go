@@ -33,7 +33,7 @@ func main() {
 	userController := controllers.NewUserController(userUsecase)
 
 	// Setup router with all controllers and middleware
-	router := routers.SetupRouter(taskController, userController)
+	router := routers.SetupRouter(taskController, userController, userUsecase)
 
 	// Start server
 	router.Run(":8080")

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	infrastructure "restfulapi/Infrastructure"
 	"restfulapi/domain"
+	infrastructure "restfulapi/infrastructure"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
