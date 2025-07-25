@@ -11,25 +11,30 @@ import (
 )
 
 func main() {
-    // Connect to MongoDB
-    client, err := infrastructure.ConnectMongo("mongodb://localhost:27017")
-    if err != nil {
-        log.Fatal("Failed to connect to MongoDB:", err)
-    }
+	// Connect to MongoDB
+	client, err := infrastructure.ConnectMongo("mongodb://localhost:27017")
+	if err != nil {
+		log.Fatal("Failed to connect to MongoDB:", err)
+	}
 
-    // Initialize Mongo collection and repository
-    taskCollection := client.Database("taskdb").Collection("tasks")
-    var taskRepo domain.TaskRepository = repositories.NewMongoTaskRepository(taskCollection)
+	// Initialize Mongo collections and repositories
+	taskCollection := client.Database("taskdb").Collection("tasks")
+	userCollection := client.Database("userdb").Collection("users")
 
-    // Initialize usecase/service
-    taskUsecase := usecases.NewTaskUsecase(taskRepo)
+	var taskRepo domain.TaskRepository = repositories.NewMongoTaskRepository(taskCollection)
+	var userRepo domain.UserRepository = repositories.NewMongoUserRepository(userCollection)
 
-    // Initialize controller
-    taskController := controllers.NewTaskController(taskUsecase)
+	// Initialize usecases
+	taskUsecase := usecases.NewTaskUsecase(taskRepo)
+	userUsecase := usecases.NewUserUsecase(userRepo)
 
-    // Setup router
-    router := routers.SetupRouter(taskController)
+	// Initialize controllers
+	taskController := controllers.NewTaskController(taskUsecase)
+	userController := controllers.NewUserController(userUsecase)
 
-    // Start server
-    router.Run(":8080")
+	// Setup router with all controllers and middleware
+	router := routers.SetupRouter(taskController, userController)
+
+	// Start server
+	router.Run(":8080")
 }
